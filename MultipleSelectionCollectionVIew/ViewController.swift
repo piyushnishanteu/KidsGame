@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+import GameplayKit
 class ViewController: UIViewController,UICollectionViewDelegate,UICollectionViewDataSource{
     
     @IBOutlet weak var collectionView: UICollectionView!
@@ -50,7 +50,15 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
+    //MARK:Shuffle Array
+    private func shuffleArray(){
+        var arr = [Int]()
+        for i in 0..<10{
+            arr.append(i)
+        }
+        let shuffledarray = GKRandomSource.sharedRandom().arrayByShufflingObjects(in: arr)
+        print(shuffledarray)
+    }
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return 10
     }
@@ -112,12 +120,14 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
             }
             
             if resultantSum == levelSum{
+                
                 let alertController = UIAlertController.init(title: "You Won", message: "Next Level", preferredStyle: .alert)
                 let okAction = UIAlertAction.init(title: "Ok", style: .default) { (action) in
                     self.timer = Timer.scheduledTimer(timeInterval: self.levelDuration, target: self, selector: #selector(self.gameOver), userInfo: nil, repeats: false)
                     self.timerView.animateCircle(duration: self.levelDuration)
                     self.collectionView.reloadData()
                     self.selectedArray.removeAll()
+                    self.resetContext()
                 }
                 alertController.addAction(okAction)
                 self.present(alertController, animated: true) {
@@ -140,18 +150,30 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
     
     func gameOver(){
         let alertController = UIAlertController.init(title: "Game Over", message: "Try Again", preferredStyle: .alert)
+        self.resetContext()
         let okAction = UIAlertAction.init(title: "Ok", style: .default) { (action) in
+            
             self.timer = Timer.scheduledTimer(timeInterval: self.levelDuration, target: self, selector: #selector(self.gameOver), userInfo: nil, repeats: false)
             self.timerView.animateCircle(duration: self.levelDuration)
             self.selectedArray.removeAll()
             self.collectionView.reloadData()
             self.attemptsLeftCount.text = self.maxAttemptsCount.text
+            
 
         }
         alertController.addAction(okAction)
         self.present(alertController, animated: true) { 
             self.timer.invalidate()
+            
         }
+    }
+    //MARK:REset Context
+    private func resetContext(){
+    self.shuffleArray()//Shuffle Array
+    //Clear the storedPoints array and reload collection view
+    self.points.removeAll()
+    self.isDraw = true
+    self.collectionView.reloadData()
     }
     //MARK: Invalid Input Animation
     fileprivate func animateOnInvalid()
