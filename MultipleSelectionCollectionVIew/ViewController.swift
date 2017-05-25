@@ -73,7 +73,6 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
         cell.titleLabel.text = String(describing: dataSource[indexPath.row])
         return cell
     }
-    
     func handlePan(recogniser:UIPanGestureRecognizer){
         switch  recogniser.state {
         case .began:
@@ -187,6 +186,37 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
         animation.autoreverses = true
         self.collectionView.layer.add(animation, forKey: "position")
         CATransaction.commit()
+    }
+    //MARK:Intesect of two Line
+    func getIntersectionOfLines(line1: (a: CGPoint, b: CGPoint), line2: (a: CGPoint, b: CGPoint)) -> Bool {
+        let distance = (line1.b.x - line1.a.x) * (line2.b.y - line2.a.y) - (line1.b.y - line1.a.y) * (line2.b.x - line2.a.x)
+        if distance == 0 {
+            print("error, parallel lines")
+            //return CGPoint.zero
+            return false
+        }
+        
+        let u = ((line2.a.x - line1.a.x) * (line2.b.y - line2.a.y) - (line2.a.y - line1.a.y) * (line2.b.x - line2.a.x)) / distance
+        let v = ((line2.a.x - line1.a.x) * (line1.b.y - line1.a.y) - (line2.a.y - line1.a.y) * (line1.b.x - line1.a.x)) / distance
+        
+        if (u < 0.0 || u > 1.0) {
+            //print("error, intersection not inside line1")
+           // return CGPoint.zero
+            return false
+        }
+        if (v < 0.0 || v > 1.0) {
+            //print("error, intersection not inside line2")
+            //return CGPoint.zero
+            return false
+        }
+        if line2.a == line1.b{
+            return false
+        }
+        
+        
+        return true
+        
+        //return CGPoint(x:line1.a.x + u * (line1.b.x - line1.a.x),y: line1.a.y + u * (line1.b.y - line1.a.y))
     }
 }
 
