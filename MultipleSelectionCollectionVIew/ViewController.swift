@@ -139,8 +139,6 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
                 if attemptsLeftCount.text == "0"{
                     self.gameOver()
                 }
-                self.collectionView.reloadData()
-                self.selectedArray.removeAll()
             }
         default:
             break
@@ -167,6 +165,7 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
             
         }
     }
+    
     //MARK:REset Context
     private func resetContext(){
     self.shuffleArray()//Shuffle Array
@@ -175,6 +174,7 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
     self.isDraw = true
     self.collectionView.reloadData()
     }
+    
     //MARK: Invalid Input Animation
     fileprivate func animateOnInvalid()
     {
