@@ -17,9 +17,10 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
     @IBOutlet weak var attemptsLeftCount: UILabel!
     var points = [CGPoint]()
     var levelDuration:TimeInterval = 10.0
+    var resultantSum = 0
     var timer:Timer!
     var dataSource:[Any] = []
-    var levelSum = 10
+    var levelSum = 20
     var selectedArray:[Any] = []
     var isDraw:Bool = false{
         didSet{
@@ -33,8 +34,8 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        let pan = UIPanGestureRecognizer.init(target: self, action: #selector(handlePan))
-        collectionView.addGestureRecognizer(pan)
+        /*let pan = UIPanGestureRecognizer.init(target: self, action: #selector(handlePan))
+        collectionView.addGestureRecognizer(pan)*/
         collectionView.canCancelContentTouches = false
         collectionView.allowsMultipleSelection = true
         timerView.animateCircle(duration: levelDuration)
@@ -43,6 +44,7 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
         for i in 0..<10{
             dataSource.append(i)
         }
+        drawView.delegate = self
         
     }
     
@@ -64,7 +66,19 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
+        let cell = collectionView.cellForItem(at: indexPath)
+        let point = CGPoint(x: (cell?.frame.midX)!, y: (cell?.frame.midY)!)
+        //if !(cell?.isSelected)!{
+            selectedArray.append(indexPath.row)
+            self.points.append(point)
+        resultantSum = 0
+        for value in selectedArray{
+            if let intValue = value as? Int{
+                resultantSum += intValue
+            }
+        }
+            isDraw = true
+        //}
     }
     
     
@@ -89,10 +103,12 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
                 if !cell.isSelected{
                     selectedArray.append(dataSource[indexPath.row])
                 }
+                let point = CGPoint(x: cell.frame.midX, y: cell.frame.midY)
+                if !cell.isSelected{
+                    self.points.append(point)
+                }
                 cell.isSelected = true
                 collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredHorizontally)
-                let point = CGPoint(x: cell.frame.midX, y: cell.frame.midY)
-                self.points.append(point)
             }
         case .changed:
             let location = recogniser.location(in: collectionView)
@@ -102,45 +118,22 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
                 if !cell.isSelected{
                     selectedArray.append(dataSource[indexPath.row])
                 }
+                let point = CGPoint(x: cell.frame.midX, y: cell.frame.midY)
+                if !cell.isSelected{
+                    self.points.append(point)
+                }
                 cell.isSelected = true
                 collectionView.selectItem(at: indexPath, animated: false, scrollPosition: .centeredHorizontally)
-                let point = CGPoint(x: cell.frame.midX, y: cell.frame.midY)
-                self.points.append(point)
             }
         case .ended:
-            isDraw = true
             let selectedPaths = collectionView.indexPathsForSelectedItems
             print("selectedItems:",selectedPaths!.count)
-            var resultantSum = 0
             for value in selectedArray{
                 if let intValue = value as? Int{
                     resultantSum += intValue
                 }
             }
-            
-            if resultantSum == levelSum{
-                
-                let alertController = UIAlertController.init(title: "You Won", message: "Next Level", preferredStyle: .alert)
-                let okAction = UIAlertAction.init(title: "Ok", style: .default) { (action) in
-                    self.timer = Timer.scheduledTimer(timeInterval: self.levelDuration, target: self, selector: #selector(self.gameOver), userInfo: nil, repeats: false)
-                    self.timerView.animateCircle(duration: self.levelDuration)
-                    self.collectionView.reloadData()
-                    self.selectedArray.removeAll()
-                    self.resetContext()
-                }
-                alertController.addAction(okAction)
-                self.present(alertController, animated: true) {
-                    self.timer.invalidate()
-                }
-            }else{
-                animateOnInvalid()
-                attemptsLeftCount.text = "\(Int(attemptsLeftCount.text!)! - 1)"
-                if attemptsLeftCount.text == "0"{
-                    self.gameOver()
-                }
-                self.collectionView.reloadData()
-                self.selectedArray.removeAll()
-            }
+            isDraw = true
         default:
             break
         }
@@ -167,7 +160,7 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
         }
     }
     //MARK:REset Context
-    private func resetContext(){
+    fileprivate func resetContext(){
     self.shuffleArray()//Shuffle Array
     //Clear the storedPoints array and reload collection view
     self.points.removeAll()
@@ -187,36 +180,42 @@ class ViewController: UIViewController,UICollectionViewDelegate,UICollectionView
         self.collectionView.layer.add(animation, forKey: "position")
         CATransaction.commit()
     }
-    //MARK:Intesect of two Line
-    func getIntersectionOfLines(line1: (a: CGPoint, b: CGPoint), line2: (a: CGPoint, b: CGPoint)) -> Bool {
-        let distance = (line1.b.x - line1.a.x) * (line2.b.y - line2.a.y) - (line1.b.y - line1.a.y) * (line2.b.x - line2.a.x)
-        if distance == 0 {
-            print("error, parallel lines")
-            //return CGPoint.zero
-            return false
+    
+}
+extension ViewController : drawViewDelegate{
+    func isLineIntersect(isIntersect: Bool) {
+        if isIntersect{
+            animateOnInvalid()
+            attemptsLeftCount.text = "\(Int(attemptsLeftCount.text!)! - 1)"
+            if attemptsLeftCount.text == "0"{
+                self.gameOver()
+            }
+            self.collectionView.reloadData()
+            self.selectedArray.removeAll()
+        }else{
+            if resultantSum == levelSum{
+                let alertController = UIAlertController.init(title: "You Won", message: "Next Level", preferredStyle: .alert)
+                let okAction = UIAlertAction.init(title: "Ok", style: .default) { (action) in
+                    self.timer = Timer.scheduledTimer(timeInterval: self.levelDuration, target: self, selector: #selector(self.gameOver), userInfo: nil, repeats: false)
+                    self.timerView.animateCircle(duration: self.levelDuration)
+                    self.collectionView.reloadData()
+                    self.selectedArray.removeAll()
+                    self.resetContext()
+                }
+                alertController.addAction(okAction)
+                self.present(alertController, animated: true) {
+                    self.timer.invalidate()
+                }
+            }else if resultantSum > levelSum{
+                animateOnInvalid()
+                attemptsLeftCount.text = "\(Int(attemptsLeftCount.text!)! - 1)"
+                if attemptsLeftCount.text == "0"{
+                    self.gameOver()
+                }
+                self.collectionView.reloadData()
+                self.selectedArray.removeAll()
+            }
         }
-        
-        let u = ((line2.a.x - line1.a.x) * (line2.b.y - line2.a.y) - (line2.a.y - line1.a.y) * (line2.b.x - line2.a.x)) / distance
-        let v = ((line2.a.x - line1.a.x) * (line1.b.y - line1.a.y) - (line2.a.y - line1.a.y) * (line1.b.x - line1.a.x)) / distance
-        
-        if (u < 0.0 || u > 1.0) {
-            //print("error, intersection not inside line1")
-           // return CGPoint.zero
-            return false
-        }
-        if (v < 0.0 || v > 1.0) {
-            //print("error, intersection not inside line2")
-            //return CGPoint.zero
-            return false
-        }
-        if line2.a == line1.b{
-            return false
-        }
-        
-        
-        return true
-        
-        //return CGPoint(x:line1.a.x + u * (line1.b.x - line1.a.x),y: line1.a.y + u * (line1.b.y - line1.a.y))
     }
 }
 
